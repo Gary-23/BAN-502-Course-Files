@@ -1,0 +1,208 @@
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(ggcorrplot)
+library(MASS)
+library(splines)
+library(readr)
+library(leaps)
+library(lmtest)
+library(glmnet)
+library(GGally)
+library(tidymodels)
+```
+```{r}
+bike <-
+  read_csv("bike_cleaned-3.csv")
+
+```
+
+Which of the quantitative variables appears to be best correlated with "count"? #Temp
+```{r}
+ggcorr( bike, label = "TRUE", label_round =  2)
+```
+
+
+## Which "season" appears to have the highest count of rides?
+```{r}
+ggplot(bike,aes(x= count, y= season)) + geom_point(alpha=.1) + geom_smooth(method = "lm", color = "red") + theme_bw()
+```
+
+## Which statement best describes the general relationship between "temp" and "count"?  
+```{r}
+ggplot(bike,aes(x= temp, y= atemp)) + geom_point(alpha=.1) + geom_smooth(method = "lm", color = "red") + theme_bw()
+```
+
+
+# 7 What is the value of the slope coefficient for "hr23" in this model (to three decimal places)?
+
+```{r}
+ggplot(bike,aes(x= hr, )) + geom_point(alpha=.1) + geom_smooth(method = "lm", color = "red") + theme_bw()
+```
+```{r}
+ggcorr( bike, label = "TRUE", label_round =  3)
+```
+
+```{r}
+bike %>% group_by(season)%>% summarize(freq = )
+```
+
+```{r}
+ggcorr( ames2, label = "TRUE", label_round =  2)
+```
+```{r}
+ggpairs(, columns = c("GarageArea","GarageCars","1stFlrSF","TotalBsmtSF","OverallQual","SalePrice"))
+ggpairs(ames2, columns = c("TotRmsAbvGrd", "GrLivArea","FullBath","YearRemodAdd","YearBuilt","SalePrice"))
+```
+# 1 bulid correlation mode: ignore "registered" "casual" "instant"
+```{r}
+bike2 <-  bike %>% dplyr::select("dteday","season","mnth","hr","holiday","weekday","workingday","weathersit","temp","atemp","hum","windspeed","count")
+```
+
+```{r}
+glimpse(bike2)
+```
+#data exploration
+
+```{r}
+bike2 <- bike2 %>% mutate(season = as_factor(season))
+```
+
+```{r}
+bike2 <- bike2 %>% mutate(hr = as_factor(hr))
+```
+
+
+```{r}
+ggplot(bike2,aes(x = atemp)) + geom_histogram()+ theme_bw()
+```
+
+```{r}
+ggcorr( bike2, label = "TRUE", label_round =  2)
+```
+
+# question 9 Create a linear regression model (using tidymodels as usual) with "temp" and "atemp" to predict "count". What is the adjusted R-squared value (to four decimal places) of this model?
+```{r}
+bike_recipe = recipe(count ~ temp + atemp, bike2)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe)
+
+lm_fit1 = fit(lm_wflow, bike2)
+```
+
+```{r}
+summary(lm_fit1$fit$fit$fit)
+```
+# Question 6 Which statement best describes the general relationship between "temp" and "count"?  
+```{r}
+ggplot(bike2, aes(x = hr, y = count)) + geom_histogram() + theme_bw()
+```
+
+# Question 3 How many dummy (indicator) variables are used to represent "hr" in the model?
+# question 7 What is the value of the slope coefficient for "hr23" in this model (to three decimal places)?
+# Question 8 What is the adjusted R-squared value (to four decimal places) for the model from Question 7? 
+```{r}
+bike_recipe = recipe(count ~ hr, bike2) %>%
+  step_dummy(all_nominal())
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe)
+
+lm_fit2 = fit(lm_wflow,bike2)
+
+
+```
+
+```{r}
+summary(lm_fit2$fit$fit$fit)
+```
+# question 13 "stepwise Backward"
+
+```{r}
+allmod = lm(atemp ~., bike2)
+summary(allmod)
+
+emptymod = lm(temp ~ 1,bike2)
+summary(emptymod)
+
+
+
+```
+# Question 13 The backward stepwise method removes only one variable. Which variable is removed? 
+```{r} 
+#backward
+backmod = stepAIC(allmod, direction = "backward", trace = TRUE)
+summary(backmod)
+```
+# Question 5 During which hour of the day does the model predict the highest number of rides?  
+```{r}
+mod2 = lm(hr~count,bike)
+summary(mod2)
+
+```
+
+```{r}
+bike2 %>% group_by(hr) %>% summarize(freq = n()) %>% arrange(desc(freq))
+```
+```{r}
+table(bike2$hr)
+```
+```{r}
+bike_recipe = recipe(count ~ hr, bike2)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe)
+
+lm_fit2 = fit(lm_wflow,bike2)
+```
+
+```{r}
+summary(lm_fit2$fit$fit$fit)
+```
+```{r}
+ggplot(bike,aes(x = hr, y = count) + geom_point())
+```
+
+```{r}
+bike_recipe = recipe(count ~ hr, bike2)
+
+lm_model = #give the model type a name 
+  linear_reg() %>% #specify that we are doing linear regression
+  set_engine("lm") #specify the specify type of linear tool we want to use 
+
+lm_wflow = 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_recipe(bike_recipe)
+
+lm_fit1 = fit(lm_wflow, bike2)
+```
+
+```{r}
+summary(lm_fit2$fit$fit$fit)
+```
+```{r}
+lm_fit2 %>% pull_workflow_fit() %>% tidy()
+```
+
